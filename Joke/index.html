@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Joke App</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+  <div id="container">
+    <div class="title">
+        <p id="name">A joke a day keeps the doctor away</p>
+    </div>
+    <div class="content">
+        <p id="joke"></p>
+    </div>
+    <hr>
+    <div id="btn">
+        <button id="like" disabled>This is Funny!</button>
+        <button id="dislike" disabled>This is not funny.</button>
+        <hr style="width: 100%; margin-top: 30px;">
+    </div>
+    <div id="btn-test">
+      <button id="reTest" disabled>Đọc lại</button>
+      <hr style="width: 100%; margin-top: 30px;">
+  </div>
+  </div>
+
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script>
+    const jokeElement = document.getElementById('joke');
+    const likeButton = document.getElementById('like');
+    const dislikeButton = document.getElementById('dislike');
+    const reTest = document.getElementById('reTest');
+    const url = 'https://my-json-server.typicode.com/tqsang252/db/joke';
+    let listJokes;
+    async function loadJoke() {
+      const getListLocal = localStorage.getItem('listJokes')
+      if(getListLocal){
+        listJokes = JSON.parse(getListLocal);
+        renderJoke();
+        likeButton.disabled = false;
+        dislikeButton.disabled = false;
+        reTest.disabled = false;
+      }else{
+        const response = await axios.get(url);
+        if(response && response.data.length > 0){
+          listJokes = this.renderData(response.data)
+          this.setLocalStorage('listJokes', JSON.stringify(listJokes));
+          renderJoke();
+          likeButton.disabled = false;
+          dislikeButton.disabled = false;
+          reTest.disabled = false;
+        }else{
+          jokeElement.innerHTML = "That's all the jokes for today! Come back another day!";
+          document.getElementById('btn').style.display = 'none';
+          document.getElementById('btn-test').style.display = 'block';
+        }
+      }
+    }
+
+    function renderData(data){
+      let arr = [];
+      data.forEach(element => {
+        arr.push({id: element.id ,title: element.title, vote: ''});
+      });
+      return arr;
+    }
+
+    function updateData(id, value){
+      const index = listJokes.findIndex(e=> {return Number(e.id) == Number(id)});
+      listJokes[index].vote = value;
+      this.setLocalStorage('listJokes', JSON.stringify(listJokes));
+    }
+
+    function renderJoke(){
+      const joke = listJokes.find(e=> {return e.vote == ''});
+      if(joke){
+        jokeElement.innerHTML = joke.title;
+        currentJokeId = joke.id;
+      }else{
+        jokeElement.innerHTML = "That's all the jokes for today! Come back another day!";
+        document.getElementById('btn').style.display = 'none';
+        document.getElementById('btn-test').style.display = 'block';
+      }
+    }
+
+    async function likeJoke(id) {
+      // await axios.post(`${url}/${id}/like`);
+      this.updateData(id, 'like')
+      likeButton.disabled = true;
+      dislikeButton.disabled = true;
+      await loadJoke();
+    }
+
+    async function dislikeJoke(id) {
+      // await axios.post(`${url}/${id}/dislike`);
+      this.updateData(id, 'dislike')
+      likeButton.disabled = true;
+      dislikeButton.disabled = true;
+      await loadJoke();
+    }
+
+    async function reTestJoke(){
+      localStorage.removeItem('listJokes')
+      await loadJoke();
+      document.getElementById('btn').style.display = 'block';
+      document.getElementById('btn-test').style.display = 'none';
+    }
+
+    // Function to set LocalStorage
+    function setLocalStorage(name, value) {
+      localStorage.setItem(name, value);
+    }
+
+    likeButton.addEventListener('click', () => likeJoke(currentJokeId));
+    dislikeButton.addEventListener('click', () => dislikeJoke(currentJokeId));
+    reTest.addEventListener('click', () => reTestJoke());
+    
+    let currentJokeId = null;
+    loadJoke();
+  </script>
+</body>
+</html>
