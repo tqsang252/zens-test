@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Joke App</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+  <div id="container">
+    <div class="logo">
+      <div class="left">
+        <img src="./assets/logo-left.PNG" alt="">
+      </div>
+      <div class="right">
+        <div>
+          <div style="width: max-content; color: #979797; font-style: italic;">Handicrafted by</div>
+          <div style="color: black;">Jim HLS</div>
+        </div>
+        <img src="./assets/logo-right.PNG" alt="">
+      </div>
+    </div>
+    <div class="title">
+        <div id="name">A joke a day keeps the doctor away</div>
+        <div id="fact">If you joke wrong way, your teeth have to pay. (Serious)</div>
+    </div>
+    <div class="content">
+        <p id="joke"></p>
+    </div>
+    <hr>
+    <div id="btn">
+        <button id="like" disabled>This is Funny!</button>
+        <button id="dislike" disabled>This is not funny.</button>
+        <!-- <hr style="width: 100%; margin-top: 30px;"> -->
+    </div>
+    <div id="btn-test">
+      <button id="reTest" disabled>Đọc lại</button>
+      <!-- <hr style="width: 100%; margin-top: 30px;"> -->
+    </div>
+
+    <div class="footer">
+      <p id="content-1">
+        This website is created as part of Hlsolutions program. The materials contained on this website are provided for general 
+      </p>
+      <p id="content-2">
+        Information only and do not constitute any form of advice. HLS assumes no responsibility for the accuracy of any particular 
+      </p>
+      <p id="content-3">
+        statement and accepts no liability for any loss or damage which may arise from reliance on the information contained on this site.
+      </p>
+      <p style="color: black;">
+        Copyright 2021 HLS
+      </p>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script>
+    const jokeElement = document.getElementById('joke');
+    const likeButton = document.getElementById('like');
+    const dislikeButton = document.getElementById('dislike');
+    const reTest = document.getElementById('reTest');
+    const url = 'https://my-json-server.typicode.com/tqsang252/db/joke';
+    let listJokes;
+    async function loadJoke() {
+      const getListLocal = localStorage.getItem('listJokes')
+      if(getListLocal){
+        listJokes = JSON.parse(getListLocal);
+        renderJoke();
+        likeButton.disabled = false;
+        dislikeButton.disabled = false;
+        reTest.disabled = false;
+      }else{
+        const response = await axios.get(url);
+        if(response && response.data.length > 0){
+          listJokes = this.renderData(response.data)
+          this.setLocalStorage('listJokes', JSON.stringify(listJokes));
+          renderJoke();
+          likeButton.disabled = false;
+          dislikeButton.disabled = false;
+          reTest.disabled = false;
+        }else{
+          jokeElement.innerHTML = "That's all the jokes for today! Come back another day!";
+          document.getElementById('btn').style.display = 'none';
+          document.getElementById('btn-test').style.display = 'block';
+        }
+      }
+    }
+
+    function renderData(data){
+      let arr = [];
+      data.forEach(element => {
+        arr.push({id: element.id ,title: element.title, vote: ''});
+      });
+      return arr;
+    }
+
+    function updateData(id, value){
+      const index = listJokes.findIndex(e=> {return Number(e.id) == Number(id)});
+      listJokes[index].vote = value;
+      this.setLocalStorage('listJokes', JSON.stringify(listJokes));
+    }
+
+    function renderJoke(){
+      const joke = listJokes.find(e=> {return e.vote == ''});
+      if(joke){
+        jokeElement.innerHTML = joke.title;
+        currentJokeId = joke.id;
+      }else{
+        jokeElement.innerHTML = "That's all the jokes for today! Come back another day!";
+        document.getElementById('btn').style.display = 'none';
+        document.getElementById('btn-test').style.display = 'block';
+      }
+    }
+
+    async function likeJoke(id) {
+      // await axios.post(`${url}/${id}/like`);
+      this.updateData(id, 'like')
+      likeButton.disabled = true;
+      dislikeButton.disabled = true;
+      await loadJoke();
+    }
+
+    async function dislikeJoke(id) {
+      // await axios.post(`${url}/${id}/dislike`);
+      this.updateData(id, 'dislike')
+      likeButton.disabled = true;
+      dislikeButton.disabled = true;
+      await loadJoke();
+    }
+
+    async function reTestJoke(){
+      localStorage.removeItem('listJokes')
+      await loadJoke();
+      document.getElementById('btn').style.display = 'block';
+      document.getElementById('btn-test').style.display = 'none';
+    }
+
+    // Function to set LocalStorage
+    function setLocalStorage(name, value) {
+      localStorage.setItem(name, value);
+    }
+
+    likeButton.addEventListener('click', () => likeJoke(currentJokeId));
+    dislikeButton.addEventListener('click', () => dislikeJoke(currentJokeId));
+    reTest.addEventListener('click', () => reTestJoke());
+    
+    let currentJokeId = null;
+    loadJoke();
+  </script>
+</body>
+</html>
